@@ -43,17 +43,21 @@ function App() {
   }, [])
 
   const handleImageUpload = (files) => {
-    const newImages = Array.from(files).map((file, index) => ({
-      id: Date.now() + index,
-      file,
-      url: URL.createObjectURL(file),
-      scale: 0.5,
-      translateX: 0,
-      translateY: 0,
-      quantized: null
-    }))
+    const newImages = Array.from(files).slice(0, 2) // Limit to 2 images max
+      .map((file, index) => ({
+        id: Date.now() + index,
+        file,
+        url: URL.createObjectURL(file),
+        scale: 0.4, // Start with partial coverage (40% of surface)
+        translateX: 0,
+        translateY: 0,
+        quantized: null
+      }))
     
-    setUploadedImages(prev => [...prev, ...newImages])
+    setUploadedImages(prev => {
+      const combined = [...prev, ...newImages]
+      return combined.slice(0, 2) // Ensure maximum 2 images
+    })
   }
 
   const updateImageProperties = (imageId, properties) => {

@@ -79,10 +79,17 @@ const GLBModel = ({ modelUrl, uploadedImages, dimensions }) => {
               const texture = new THREE.TextureLoader().load(quantizedDataUrl)
               texture.wrapS = THREE.RepeatWrapping
               texture.wrapT = THREE.RepeatWrapping
-              texture.repeat.set(image.scale, image.scale)
-              texture.offset.set(image.translateX, image.translateY)
+              // Make images cover only a portion of the surface (not full coverage)
+              texture.repeat.set(image.scale * 0.5, image.scale * 0.5) // Reduced from full scale
+              texture.offset.set(image.translateX * 0.5, image.translateY * 0.5)
               
-              textures.push(texture)
+              textures.push({
+                texture,
+                scale: image.scale,
+                translateX: image.translateX,
+                translateY: image.translateY,
+                id: image.id
+              })
               resolve()
             }
             img.onerror = reject
@@ -93,13 +100,68 @@ const GLBModel = ({ modelUrl, uploadedImages, dimensions }) => {
         }
       }
 
-      // Apply textures to all meshes in the scene
+      // Apply textures to all meshes in the scene with proper layering
       scene.traverse((child) => {
         if (child.isMesh) {
-          if (textures.length >= 1) {
+          if (textures.length === 1) {
+            // Single texture - apply directly
             child.material = new THREE.MeshLambertMaterial({ 
-              map: textures[0],
-              transparent: true 
+              map: textures[0].texture,
+              transparent: true,
+              alphaTest: 0.1
+            })
+          } else if (textures.length >= 2) {
+            // Multiple textures - create layered material with custom shader
+            const vertexShader = `
+              varying vec2 vUv;
+              void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+            `
+
+            const fragmentShader = `
+              uniform sampler2D texture1;
+              uniform sampler2D texture2;
+              uniform float scale1;
+              uniform float scale2;
+              uniform vec2 offset1;
+              uniform vec2 offset2;
+              varying vec2 vUv;
+              
+              void main() {
+                // Sample first texture (uploaded first, appears under)
+                vec2 uv1 = vUv * scale1 + offset1;
+                vec4 color1 = texture2D(texture1, uv1);
+                
+                // Sample second texture (uploaded second, appears over)
+                vec2 uv2 = vUv * scale2 + offset2;
+                vec4 color2 = texture2D(texture2, uv2);
+                
+                // Blend textures - second image overlays first
+                // Use alpha blending for proper layering
+                vec4 finalColor = mix(color1, color2, color2.a * 0.8);
+                
+                // Ensure some transparency for realistic fabric appearance
+                finalColor.a = max(color1.a, color2.a * 0.9);
+                
+                gl_FragColor = finalColor;
+              }
+            `
+
+            child.material = new THREE.ShaderMaterial({
+              vertexShader,
+              fragmentShader,
+              uniforms: {
+                texture1: { value: textures[0].texture },
+                texture2: { value: textures[1].texture },
+                scale1: { value: textures[0].scale * 0.5 },
+                scale2: { value: textures[1].scale * 0.5 },
+                offset1: { value: new THREE.Vector2(textures[0].translateX * 0.5, textures[0].translateY * 0.5) },
+                offset2: { value: new THREE.Vector2(textures[1].translateX * 0.5, textures[1].translateY * 0.5) }
+              },
+              transparent: true,
+              alphaTest: 0.1
             })
           }
         }
@@ -144,23 +206,20 @@ const FallbackBox = ({ uploadedImages, dimensions }) => {
     return new THREE.BoxGeometry(scaleX, scaleY, scaleZ)
   }, [dimensions])
 
-  // Create material with textures
+  // Create material with layered textures
   const material = React.useMemo(() => {
     if (uploadedImages.length === 0) {
       return new THREE.MeshLambertMaterial({ color: 0xcccccc })
     }
 
-    // Use the first uploaded image as texture
-    const firstImage = uploadedImages[0]
-    if (firstImage) {
-      // Create quantized texture
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.src = firstImage.url
-      
+    if (uploadedImages.length === 1) {
+      // Single image - create quantized texture
+      const firstImage = uploadedImages[0]
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
       
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
       img.onload = () => {
         canvas.width = img.width
         canvas.height = img.height
@@ -172,13 +231,116 @@ const FallbackBox = ({ uploadedImages, dimensions }) => {
         const texture = new THREE.TextureLoader().load(quantizedDataUrl)
         texture.wrapS = THREE.RepeatWrapping
         texture.wrapT = THREE.RepeatWrapping
-        texture.repeat.set(firstImage.scale, firstImage.scale)
-        texture.offset.set(firstImage.translateX, firstImage.translateY)
+        // Partial surface coverage
+        texture.repeat.set(firstImage.scale * 0.5, firstImage.scale * 0.5)
+        texture.offset.set(firstImage.translateX * 0.5, firstImage.translateY * 0.5)
         
         if (meshRef.current) {
-          meshRef.current.material = new THREE.MeshLambertMaterial({ map: texture })
+          meshRef.current.material = new THREE.MeshLambertMaterial({ 
+            map: texture,
+            transparent: true,
+            alphaTest: 0.1
+          })
         }
       }
+      img.src = firstImage.url
+      
+      return new THREE.MeshLambertMaterial({ color: 0xcccccc })
+      
+    } else if (uploadedImages.length >= 2) {
+      // Multiple images - use shader for proper layering
+      const vertexShader = `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `
+
+      const fragmentShader = `
+        uniform sampler2D texture1;
+        uniform sampler2D texture2;
+        uniform float scale1;
+        uniform float scale2;
+        uniform vec2 offset1;
+        uniform vec2 offset2;
+        varying vec2 vUv;
+        
+        void main() {
+          // Sample first texture (uploaded first, appears under)
+          vec2 uv1 = vUv * scale1 + offset1;
+          vec4 color1 = texture2D(texture1, uv1);
+          
+          // Sample second texture (uploaded second, appears over)
+          vec2 uv2 = vUv * scale2 + offset2;
+          vec4 color2 = texture2D(texture2, uv2);
+          
+          // Blend textures - second image overlays first
+          vec4 finalColor = mix(color1, color2, color2.a * 0.8);
+          finalColor.a = max(color1.a, color2.a * 0.9);
+          
+          gl_FragColor = finalColor;
+        }
+      `
+
+      // Load and process textures
+      const processTextures = async () => {
+        const textures = []
+        
+        for (let i = 0; i < Math.min(2, uploadedImages.length); i++) {
+          const image = uploadedImages[i]
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          
+          await new Promise((resolve) => {
+            img.onload = () => {
+              const canvas = document.createElement('canvas')
+              const ctx = canvas.getContext('2d')
+              
+              canvas.width = img.width
+              canvas.height = img.height
+              ctx.drawImage(img, 0, 0)
+              
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+              const quantizedDataUrl = quantizeImage(imageData)
+              
+              const texture = new THREE.TextureLoader().load(quantizedDataUrl)
+              texture.wrapS = THREE.RepeatWrapping
+              texture.wrapT = THREE.RepeatWrapping
+              
+              textures.push({
+                texture,
+                scale: image.scale,
+                translateX: image.translateX,
+                translateY: image.translateY
+              })
+              resolve()
+            }
+            img.src = image.url
+          })
+        }
+
+        if (meshRef.current && textures.length >= 2) {
+          meshRef.current.material = new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            uniforms: {
+              texture1: { value: textures[0].texture },
+              texture2: { value: textures[1].texture },
+              scale1: { value: textures[0].scale * 0.5 },
+              scale2: { value: textures[1].scale * 0.5 },
+              offset1: { value: new THREE.Vector2(textures[0].translateX * 0.5, textures[0].translateY * 0.5) },
+              offset2: { value: new THREE.Vector2(textures[1].translateX * 0.5, textures[1].translateY * 0.5) }
+            },
+            transparent: true,
+            alphaTest: 0.1
+          })
+        }
+      }
+
+      processTextures()
+      
+      return new THREE.MeshLambertMaterial({ color: 0xcccccc })
     }
 
     return new THREE.MeshLambertMaterial({ color: 0xcccccc })

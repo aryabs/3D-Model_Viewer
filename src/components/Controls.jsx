@@ -57,7 +57,8 @@ const Controls = ({
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <p>Drag & drop images here or click to select</p>
+          <p>Upload up to 2 images for layered designs</p>
+          <small>Images will be quantized to 2 colors and overlayed in upload order</small>
           <input
             ref={fileInputRef}
             type="file"
@@ -74,11 +75,11 @@ const Controls = ({
               <div key={image.id} className="uploaded-image">
                 <img src={image.url} alt={`Upload ${index + 1}`} />
                 <div className="image-controls">
-                  <label>Scale: {image.scale.toFixed(2)}</label>
+                  <label>Scale: {image.scale.toFixed(2)} (coverage)</label>
                   <input
                     type="range"
-                    min="0.1"
-                    max="2"
+                    min="0.2"
+                    max="1.0"
                     step="0.1"
                     value={image.scale}
                     onChange={(e) => onUpdateImageProperties(image.id, { scale: parseFloat(e.target.value) })}
@@ -87,8 +88,8 @@ const Controls = ({
                   <label>Position X: {image.translateX.toFixed(2)}</label>
                   <input
                     type="range"
-                    min="-2"
-                    max="2"
+                    min="-1"
+                    max="1"
                     step="0.1"
                     value={image.translateX}
                     onChange={(e) => onUpdateImageProperties(image.id, { translateX: parseFloat(e.target.value) })}
@@ -97,8 +98,8 @@ const Controls = ({
                   <label>Position Y: {image.translateY.toFixed(2)}</label>
                   <input
                     type="range"
-                    min="-2"
-                    max="2"
+                    min="-1"
+                    max="1"
                     step="0.1"
                     value={image.translateY}
                     onChange={(e) => onUpdateImageProperties(image.id, { translateY: parseFloat(e.target.value) })}
