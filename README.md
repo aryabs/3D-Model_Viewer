@@ -74,21 +74,6 @@ const newColor = brightness > threshold ? [255, 255, 255, 255] : [0, 0, 0, 255];
 - Error boundaries for component crashes
 - Graceful API error handling
 
-## Development Notes
-
-### Fixed Issues
-- ✅ Texture removal bug (model now resets to default when all images removed)
-- ✅ CSS import path after project restructuring
-- ✅ Proper image overlay ordering and blending
-
-### Git Workflow
-- Conventional commits (`feat:`, `fix:`, `refactor:`)
-- `dev` branch for active development
-- `main` branch for stable releases
-
-## Browser Support
-
-Modern browsers with WebGL support (Chrome, Firefox, Safari, Edge)
 
 ## 💭 Developer Feedback
 
