@@ -11,7 +11,6 @@ const ModelViewer = ({ modelData, uploadedImages, dimensions }) => {
   // Extract model URL from API data
   useEffect(() => {
     if (modelData?.model) {
-      console.log('Setting model URL:', modelData.model)
       setModelUrl(modelData.model)
       setUseGLBModel(true)
     }
@@ -23,7 +22,6 @@ const ModelViewer = ({ modelData, uploadedImages, dimensions }) => {
     setUseGLBModel(false)
   }
 
-  console.log('ModelViewer render - useGLBModel:', useGLBModel, 'modelUrl:', modelUrl)
 
   return (
     <group ref={groupRef}>

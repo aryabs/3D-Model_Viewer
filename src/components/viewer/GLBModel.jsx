@@ -5,49 +5,42 @@ import { quantizeImage } from '../../utils/textureHelpers'
 
 // Component for loading GLB model
 const GLBModel = ({ modelUrl, uploadedImages, dimensions }) => {
-  console.log('GLBModel component - attempting to load:', modelUrl)
+
   const { scene, error } = useGLTF(modelUrl)
-  
-  useEffect(() => {
-    if (error) {
-      console.error('useGLTF error:', error)
-    }
-    if (scene) {
-      console.log('GLB model loaded successfully:', scene)
-    }
-  }, [scene, error])
-  
+
+
+
   // Apply textures to the loaded model
   useEffect(() => {
-    if (!scene || uploadedImages.length === 0) return
+    if (!scene) return
 
     const applyTexturesToModel = async () => {
       const textures = []
-      
+
       // Process uploaded images and create quantized textures
       for (const image of uploadedImages) {
         try {
           const img = new Image()
           img.crossOrigin = 'anonymous'
-          
+
           await new Promise((resolve, reject) => {
             img.onload = () => {
               const canvas = document.createElement('canvas')
               const ctx = canvas.getContext('2d')
-              
+
               canvas.width = img.width
               canvas.height = img.height
               ctx.drawImage(img, 0, 0)
-              
+
               const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
               const quantizedDataUrl = quantizeImage(imageData)
-              
+
               const texture = new THREE.TextureLoader().load(quantizedDataUrl)
               texture.wrapS = THREE.RepeatWrapping
               texture.wrapT = THREE.RepeatWrapping
               texture.repeat.set(image.scale, image.scale)
               texture.offset.set(image.translateX, image.translateY)
-              
+
               textures.push(texture)
               resolve()
             }
@@ -62,10 +55,17 @@ const GLBModel = ({ modelUrl, uploadedImages, dimensions }) => {
       // Apply textures to all meshes in the scene
       scene.traverse((child) => {
         if (child.isMesh) {
-          if (textures.length === 1) {
-            child.material = new THREE.MeshLambertMaterial({ 
+          if (textures.length === 0) {
+            // No textures - use default material
+            child.material = new THREE.MeshLambertMaterial({
+              color: 0xcccccc,
+              transparent: false
+            })
+          } else if (textures.length === 1) {
+            // Single texture
+            child.material = new THREE.MeshLambertMaterial({
               map: textures[0],
-              transparent: true 
+              transparent: true
             })
           } else if (textures.length > 1) {
             // Create a custom shader material for blending multiple textures
