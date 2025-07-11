@@ -108,3 +108,25 @@ const newColor = brightness > threshold ? [255, 255, 255, 255] : [0, 0, 0, 255];
 
 **Git Workflow:**
 Used conventional commits (`feat:`, `fix:`, `docs:`) with a dev branch strategy for clean version control and easy feature tracking.
+
+## Libraries & Dependencies
+
+### Core Framework
+- **React** `^18.2.0` - Modern component-based UI framework
+- **Vite** `^5.0.8` - Fast build tool and development server
+
+### 3D Graphics & Rendering
+- **Three.js** `^0.158.0` - WebGL-based 3D graphics library
+- **@react-three/fiber** `^8.15.11` - React renderer for Three.js
+- **@react-three/drei** `^9.88.13` - Utility components for React Three Fiber
+  - `useGLTF` - GLB/GLTF model loader
+  - `OrbitControls` - Camera controls for 3D navigation
+
+### Key Features Enabled by Libraries
+- **GLB Model Loading**: `@react-three/drei` useGLTF hook
+- **3D Scene Management**: React Three Fiber declarative 3D
+- **Camera Controls**: Built-in OrbitControls from drei
+- **Shader Programming**: Native Three.js shader materials
+- **Image Processing**: HTML5 Canvas API for quantization
+- **File Upload**: Native HTML5 File API with drag-and-drop
+- **Responsive Design**: CSS Grid and Flexbox
