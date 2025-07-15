@@ -8,13 +8,13 @@ const ModelViewer = ({ modelData, uploadedImages, dimensions }) => {
   const [modelUrl, setModelUrl] = useState(null)
   const [useGLBModel, setUseGLBModel] = useState(true)
 
-  // Extract model URL from API data
-  useEffect(() => {
-    if (modelData?.model) {
-      setModelUrl(modelData.model)
-      setUseGLBModel(true)
-    }
-  }, [modelData])
+  // // Extract model URL from API data
+  // useEffect(() => {
+  //   if (modelData?.model) {
+  //     setModelUrl(modelData.model)
+  //     setUseGLBModel(true)
+  //   }
+  // }, [modelData])
 
   // Error boundary for GLB model loading
   const handleGLBError = (error) => {
@@ -25,11 +25,11 @@ const ModelViewer = ({ modelData, uploadedImages, dimensions }) => {
 
   return (
     <group ref={groupRef}>
-      {useGLBModel && modelUrl ? (
+      {useGLBModel  ? (
         <React.Suspense fallback={null}>
           <ErrorBoundary onError={handleGLBError}>
             <GLBModel 
-              modelUrl={modelUrl}
+              modelUrl={modelData.model}
               uploadedImages={uploadedImages}
               dimensions={dimensions}
             />

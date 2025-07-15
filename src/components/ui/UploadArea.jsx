@@ -30,6 +30,8 @@ const UploadArea = ({ onFileUpload, maxFiles = 2, currentCount = 0 }) => {
     }
   }
 
+  
+
   const isDisabled = currentCount >= maxFiles
 
   return (

@@ -9,8 +9,9 @@ import './styles/globals.css'
 
 function App() {
   const { modelData, loading, error } = useModelAPI()
-  const { uploadedImages, handleImageUpload, updateImageProperties, removeImage } = useImageUpload()
+  const { uploadedImages, handleImageUpload, updateImageProperties, removeImage,reverseImages } = useImageUpload()
   const { dimensions, updateDimensions } = useDimensions(modelData)
+  
 
   if (loading) {
     return <div className="loading">{UI_MESSAGES.LOADING}</div>
@@ -20,8 +21,22 @@ function App() {
     return <div className="error">{UI_MESSAGES.ERROR_PREFIX}{error}</div>
   }
 
+
+   const handleReorder = () => {
+
+    const reorderedArray = [...uploadedImages];
+
+    reverseImages();
+
+    console.log('reorderedArray',reorderedArray.reverse());
+   
+    
+  }
+
   return (
     <div className="app">
+       <button onClick={handleReorder} >Re order</button>
+
       <Controls 
         modelData={modelData}
         uploadedImages={uploadedImages}

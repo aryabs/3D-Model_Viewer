@@ -29,7 +29,6 @@ export const useModelAPI = () => {
 // Custom hook for image upload management
 export const useImageUpload = () => {
   const [uploadedImages, setUploadedImages] = useState([])
-
   const handleImageUpload = (files) => {
     const newImages = Array.from(files).slice(0, 2) // Limit to 2 images max
       .map((file, index) => ({
@@ -61,11 +60,22 @@ export const useImageUpload = () => {
     setUploadedImages(prev => prev.filter(img => img.id !== imageId))
   }
 
+  const reverseImages = () => {
+     const reverseImages = [...uploadedImages];
+      reverseImages.reverse();
+    
+
+     setUploadedImages(reverseImages)
+
+
+  }
+
   return {
     uploadedImages,
     handleImageUpload,
     updateImageProperties,
-    removeImage
+    removeImage,
+    reverseImages
   }
 }
 
